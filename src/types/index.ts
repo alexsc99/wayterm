@@ -184,7 +184,7 @@ export interface TerminalSettings {
   openLinksWithCmdClick: boolean;
   /** Write every session's output to a log file. */
   sessionLogging: boolean;
-  /** Log directory; empty = ~/Documents/putty+ Logs. */
+  /** Log directory; empty = ~/Documents/Wayterm Logs. */
   sessionLogDirectory: string;
   /** Reopen the tabs of the last run on startup. */
   restoreSessions: boolean;

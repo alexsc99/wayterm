@@ -434,7 +434,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
               Schließen
             </span>
           </div>
-          <div className="text-[10px] text-zinc-400">putty+ Befehlspalette</div>
+          <div className="text-[10px] text-zinc-400">Wayterm Befehlspalette</div>
         </div>
       </div>
     </div>

@@ -30,7 +30,7 @@ app.whenReady().then(async () => {
     const png = path.join(dir, 'icon.png');
     fs.writeFileSync(png, image.toPNG());
 
-    const iconset = fs.mkdtempSync(path.join(os.tmpdir(), 'putty-plus-')) + '/icon.iconset';
+    const iconset = fs.mkdtempSync(path.join(os.tmpdir(), 'wayterm-')) + '/icon.iconset';
     fs.mkdirSync(iconset);
     for (const size of [16, 32, 128, 256, 512]) {
       for (const [scale, suffix] of [[1, ''], [2, '@2x']]) {

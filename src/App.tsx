@@ -997,7 +997,7 @@ export const App: React.FC = () => {
             >
               <PanelLeft className="w-3.5 h-3.5" />
             </button>
-            <span className="text-zinc-500 font-medium">PuTTY+</span>
+            <span className="text-zinc-500 font-medium">Wayterm</span>
             <span className="text-zinc-700">/</span>
             <span className="text-zinc-200 font-medium">{tabTitles[currentTab]}</span>
           </div>
@@ -1183,7 +1183,7 @@ export const App: React.FC = () => {
                     <span className="text-zinc-700">|</span>
                   </>
                 )}
-                <span className="text-zinc-400">PuTTY+ v{appVersion}</span>
+                <span className="text-zinc-400">Wayterm v{appVersion}</span>
                 <span className="text-zinc-700">|</span>
                 <span>macOS arm64</span>
               </div>

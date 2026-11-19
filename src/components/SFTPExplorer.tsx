@@ -494,7 +494,7 @@ export const SFTPExplorer: React.FC<SFTPExplorerProps> = ({
     setIsDraggingOverRemote(false);
     if (!selectedHost) return;
 
-    const localPayloadRaw = e.dataTransfer.getData('application/x-putty-local');
+    const localPayloadRaw = e.dataTransfer.getData('application/x-wayterm-local');
     if (localPayloadRaw) {
       try {
         const parsed: unknown = JSON.parse(localPayloadRaw);
@@ -555,7 +555,7 @@ export const SFTPExplorer: React.FC<SFTPExplorerProps> = ({
     setIsDraggingOverLocal(false);
     if (!selectedHost) return;
 
-    const remotePayloadRaw = e.dataTransfer.getData('application/x-putty-remote');
+    const remotePayloadRaw = e.dataTransfer.getData('application/x-wayterm-remote');
     if (!remotePayloadRaw) return;
 
     try {
@@ -836,7 +836,7 @@ export const SFTPExplorer: React.FC<SFTPExplorerProps> = ({
                   draggable
                   onDragStart={(e) => {
                     e.dataTransfer.setData(
-                      'application/x-putty-local',
+                      'application/x-wayterm-local',
                       JSON.stringify({
                         path: file.path,
                         name: file.name,
@@ -945,7 +945,7 @@ export const SFTPExplorer: React.FC<SFTPExplorerProps> = ({
               {selectedHost && protocolMode === 'scp' && (
                 <span
                   className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 shrink-0 cursor-help"
-                  title="SFTP-Subsystem ist auf dem Server nicht verfügbar. PuTTY+ verwendet automatisch den SSH/SCP-Modus."
+                  title="SFTP-Subsystem ist auf dem Server nicht verfügbar. Wayterm verwendet automatisch den SSH/SCP-Modus."
                 >
                   SCP-Fallback
                 </span>
@@ -991,7 +991,7 @@ export const SFTPExplorer: React.FC<SFTPExplorerProps> = ({
             <div className="px-3 py-1.5 bg-amber-500/10 border-b border-amber-500/20 flex items-center gap-2 text-[11px] text-amber-300">
               <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
               <span className="truncate">
-                SFTP-Subsystem auf dem Server nicht verfügbar – PuTTY+ nutzt automatisch den SSH/SCP-Modus.
+                SFTP-Subsystem auf dem Server nicht verfügbar – Wayterm nutzt automatisch den SSH/SCP-Modus.
               </span>
             </div>
           )}
@@ -1179,7 +1179,7 @@ export const SFTPExplorer: React.FC<SFTPExplorerProps> = ({
                     draggable
                     onDragStart={(e) => {
                       e.dataTransfer.setData(
-                        'application/x-putty-remote',
+                        'application/x-wayterm-remote',
                         JSON.stringify({
                           path: file.path,
                           name: file.name,

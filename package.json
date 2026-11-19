@@ -1,22 +1,22 @@
 {
-  "name": "putty-plus",
-  "version": "1.3.0",
+  "name": "wayterm",
+  "version": "1.4.0",
   "description": "Modern SSH, SFTP, and Key Manager for macOS",
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "start": "electron .",
-    "dist": "npm run build && electron-builder --mac --dir && codesign --force --deep --sign - release.noindex/mac-arm64/putty+.app",
-    "install:app": "npm run dist && rm -rf /Applications/putty+.app && cp -R release.noindex/mac-arm64/putty+.app /Applications/putty+.app && codesign --force --deep --sign - /Applications/putty+.app && rm -rf release.noindex/mac-arm64",
+    "dist": "npm run build && electron-builder --mac --dir && codesign --force --deep --sign - release.noindex/mac-arm64/Wayterm.app",
+    "install:app": "npm run dist && rm -rf /Applications/Wayterm.app && cp -R release.noindex/mac-arm64/Wayterm.app /Applications/Wayterm.app && codesign --force --deep --sign - /Applications/Wayterm.app && rm -rf release.noindex/mac-arm64",
     "lint": "eslint .",
     "test": "vitest run",
     "icon": "electron build/render-icon.cjs",
     "postinstall": "chmod +x node_modules/node-pty/prebuilds/darwin-arm64/spawn-helper 2>/dev/null || true"
   },
   "build": {
-    "appId": "com.puttyplus.app",
-    "productName": "putty+",
+    "appId": "com.wayterm.app",
+    "productName": "Wayterm",
     "directories": {
       "output": "release.noindex"
     },

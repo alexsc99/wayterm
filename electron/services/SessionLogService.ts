@@ -8,7 +8,7 @@ export interface SessionLogConfig {
   directory: string;
 }
 
-export const DEFAULT_LOG_DIRECTORY = path.join(os.homedir(), 'Documents', 'putty+ Logs');
+export const DEFAULT_LOG_DIRECTORY = path.join(os.homedir(), 'Documents', 'Wayterm Logs');
 
 // Writes raw terminal output (including ANSI sequences; view with `less -R`) to one file per connection.
 // The renderer pushes the configuration; sessions started while logging is disabled are not logged.

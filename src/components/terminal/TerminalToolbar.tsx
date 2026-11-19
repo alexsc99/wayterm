@@ -111,7 +111,7 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
           </span>
         )}
 
-        {/* MobaXterm Colors & Live Syntax Highlighting Toggle */}
+        {/* Colour theme & live syntax highlighting toggle */}
         <button
           type="button"
           onClick={onToggleMobaColors}
@@ -122,12 +122,12 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
           }`}
           title={
             mobaColorsEnabled
-              ? 'MobaXterm-Farben & Live-Syntax-Highlighting aktiv (Klicken zum Ausschalten)'
-              : 'MobaXterm-Farben & Live-Syntax-Highlighting einschalten'
+              ? 'Syntax-Farben & Live-Hervorhebung aktiv (Klicken zum Ausschalten)'
+              : 'Syntax-Farben & Live-Hervorhebung einschalten'
           }
         >
           <Palette className="w-3.5 h-3.5" />
-          <span className="hidden lg:inline text-[11px]">MobaXterm</span>
+          <span className="hidden lg:inline text-[11px]">Syntax-Farben</span>
         </button>
 
         {/* Clear Screen */}

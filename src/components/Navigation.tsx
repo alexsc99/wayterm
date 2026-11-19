@@ -96,14 +96,14 @@ export const Navigation: React.FC<NavigationProps> = ({
           {!isCollapsed && (
             <div className="flex items-center gap-2.5 no-drag">
               <div className="w-6 h-6 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-xs text-white shadow-sm">
-                P+
+                W
               </div>
               <div>
                 <div className="font-bold text-xs tracking-wider uppercase text-zinc-100 flex items-center gap-1.5">
-                  <span>PuTTY+</span>
+                  <span>Wayterm</span>
                 </div>
                 <div className="text-[10px] text-zinc-500 font-medium -mt-0.5">
-                  Terminus für macOS
+                  SSH, SFTP und Seriell für macOS
                 </div>
               </div>
             </div>

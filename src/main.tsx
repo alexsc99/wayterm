@@ -6,7 +6,7 @@ import './styles/index.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <ErrorBoundary area="PuTTY+" variant="overlay">
+    <ErrorBoundary area="Wayterm" variant="overlay">
       <App />
     </ErrorBoundary>
   </React.StrictMode>

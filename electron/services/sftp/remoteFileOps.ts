@@ -145,7 +145,7 @@ export async function writeRemoteFile(entry: PoolEntry, remotePath: string, cont
   if (entry.mode === 'scp' || !entry.sftp) {
     const res = await execCommand(
       entry.client,
-      `cat > ${escapeShellPath(remotePath)} << 'EOF_PUTTY_WRITE'\n${content}\nEOF_PUTTY_WRITE`
+      `cat > ${escapeShellPath(remotePath)} << 'EOF_WAYTERM_WRITE'\n${content}\nEOF_WAYTERM_WRITE`
     );
     if (res.code !== 0) {
       throw new Error(res.stderr.trim() || `Datei konnte nicht geschrieben werden: ${remotePath}`);

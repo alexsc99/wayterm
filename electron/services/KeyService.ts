@@ -206,7 +206,7 @@ export class KeyService {
       throw new Error(`Eine Schlüsseldatei mit dem Namen "${safeName}" existiert bereits in ~/.ssh!`);
     }
 
-    const comment = options.comment?.trim() || `${options.name}@terminus`;
+    const comment = options.comment?.trim() || `${options.name}@wayterm`;
     const passphrase = options.passphrase || '';
 
     // Generate via native ssh-keygen on macOS with argument array to prevent shell injection

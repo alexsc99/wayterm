@@ -11,6 +11,13 @@ import { sessionLog, DEFAULT_LOG_DIRECTORY } from './services/SessionLogService'
 import { SerialService } from './services/SerialService';
 import { HostKeyVerifier } from './services/HostKeyVerifier';
 
+// The app was called "putty-plus" before the rename to Wayterm. Electron derives the user-data folder,
+// the log folder and the Keychain entry that protects stored passwords ("<name> Safe Storage") from this
+// name, so it stays pinned: renaming it would hide all saved hosts and make encrypted passwords unreadable.
+// What users see (Dock, menu, window title) comes from productName / the strings below.
+const APP_DISPLAY_NAME = 'Wayterm';
+app?.setName('putty-plus');
+
 let win: BrowserWindow | null = null;
 let hostStore: HostStore;
 let sshService: SSHService;
@@ -37,7 +44,7 @@ function createMenu() {
     ...(isMac
       ? [
           {
-            label: app.name,
+            label: APP_DISPLAY_NAME,
             submenu: [
               { role: 'about' },
               { type: 'separator' },
@@ -193,7 +200,7 @@ function createWindow() {
   const savedState = loadWindowState();
 
   win = new BrowserWindow({
-    title: 'PuTTY+',
+    title: APP_DISPLAY_NAME,
     show: false,
     width: savedState.width,
     height: savedState.height,
@@ -259,7 +266,7 @@ function createWindow() {
     void dialog
       .showMessageBox(target, {
         type: 'error',
-        message: 'Die Oberfläche von PuTTY+ ist wiederholt abgestürzt.',
+        message: `Die Oberfläche von ${APP_DISPLAY_NAME} ist wiederholt abgestürzt.`,
         detail: `Grund: ${details.reason}. Details stehen in ${path.join(app.getPath('logs'), 'main.log')}.`,
         buttons: ['Neu laden', 'Beenden'],
         defaultId: 0,

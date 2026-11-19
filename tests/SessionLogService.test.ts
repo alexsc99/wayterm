@@ -18,7 +18,7 @@ function readOnlyLog(directory: string): string {
 }
 
 beforeEach(async () => {
-  tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'putty-plus-sessionlog-'));
+  tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'wayterm-sessionlog-'));
   // Dynamic import after resetModules: the module exports a singleton and each test needs a fresh one.
   vi.resetModules();
   ({ sessionLog } = await import('../electron/services/SessionLogService'));
