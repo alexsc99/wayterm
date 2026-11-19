@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import type { TerminalSettings } from '../types';
 import { loadTerminalSettings, saveTerminalSettings } from '../utils/terminalSettings';
 
-const MOBA_STORAGE_KEY = 'putty_plus_mobaxterm_colors';
+const COLORS_STORAGE_KEY = 'putty_plus_mobaxterm_colors'; // legacy key name, kept so saved preferences survive
 
-/** Persistent terminal settings and the MobaXterm colour toggle. */
+/** Persistent terminal settings and the colour theme toggle. */
 export function useTerminalPreferences() {
   const [settings, setSettings] = useState<TerminalSettings>(() => loadTerminalSettings());
   const settingsRef = useRef<TerminalSettings>(settings);
@@ -32,25 +32,25 @@ export function useTerminalPreferences() {
     });
   }, [settings.sessionLogging, settings.sessionLogDirectory]);
 
-  // MobaXterm Colors & Live Syntax Highlighting State
-  const [mobaColorsEnabled, setMobaColorsEnabled] = useState<boolean>(() => {
+  // Colour theme & live syntax highlighting state
+  const [vividColorsEnabled, setVividColorsEnabled] = useState<boolean>(() => {
     try {
-      const saved = localStorage.getItem(MOBA_STORAGE_KEY);
+      const saved = localStorage.getItem(COLORS_STORAGE_KEY);
       return saved !== null ? saved === 'true' : true;
     } catch {
       return true;
     }
   });
-  const mobaColorsEnabledRef = useRef<boolean>(mobaColorsEnabled);
-  mobaColorsEnabledRef.current = mobaColorsEnabled;
+  const vividColorsEnabledRef = useRef<boolean>(vividColorsEnabled);
+  vividColorsEnabledRef.current = vividColorsEnabled;
 
   useEffect(() => {
     try {
-      localStorage.setItem(MOBA_STORAGE_KEY, String(mobaColorsEnabled));
+      localStorage.setItem(COLORS_STORAGE_KEY, String(vividColorsEnabled));
     } catch {
       // Ignore storage errors
     }
-  }, [mobaColorsEnabled]);
+  }, [vividColorsEnabled]);
 
   return {
     settings,
@@ -58,8 +58,8 @@ export function useTerminalPreferences() {
     fontSize,
     setFontSize,
     updateSettings,
-    mobaColorsEnabled,
-    setMobaColorsEnabled,
-    mobaColorsEnabledRef,
+    vividColorsEnabled,
+    setVividColorsEnabled,
+    vividColorsEnabledRef,
   };
 }

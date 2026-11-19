@@ -5,7 +5,7 @@ import { WebglAddon } from '@xterm/addon-webgl';
 import { SearchAddon } from '@xterm/addon-search';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import type { SSHSession, TerminalSettings } from '../types';
-import { MOBAXTERM_THEME, DEFAULT_TERMINAL_THEME, MobaHighlighterSession } from '../utils/mobaxterm';
+import { VIVID_TERMINAL_THEME, DEFAULT_TERMINAL_THEME, SyntaxHighlighterSession } from '../utils/terminalColors';
 import type { TerminalBridge, TerminalInstance, TerminalNoticeTone } from '../components/terminal/model';
 import { createTerminalKeyHandler, type TerminalKeyActions } from './useTerminalShortcuts';
 
@@ -23,7 +23,7 @@ interface TerminalInstancesOptions extends TerminalKeyActions {
   activeSessionId: string | null;
   isVisible: boolean;
   settings: TerminalSettings;
-  mobaColorsEnabled: boolean;
+  vividColorsEnabled: boolean;
   /** Focus guards for the WebGL/refocus effect (values of the triggering render). */
   renamingId: string | null;
   menuAnchor: HTMLElement | null;
@@ -32,7 +32,7 @@ interface TerminalInstancesOptions extends TerminalKeyActions {
   terminalInstances: React.MutableRefObject<Map<string, TerminalInstance>>;
   searchAddonsRef: React.MutableRefObject<Map<string, SearchAddon>>;
   settingsRef: React.MutableRefObject<TerminalSettings>;
-  mobaColorsEnabledRef: React.MutableRefObject<boolean>;
+  vividColorsEnabledRef: React.MutableRefObject<boolean>;
   activeSessionIdRef: React.MutableRefObject<string | null>;
   sessionsRef: React.MutableRefObject<SSHSession[]>;
   searchInputRef: React.RefObject<HTMLInputElement>;
@@ -53,7 +53,7 @@ export function useTerminalInstances(options: TerminalInstancesOptions) {
     activeSessionId,
     isVisible,
     settings,
-    mobaColorsEnabled,
+    vividColorsEnabled,
     renamingId,
     menuAnchor,
     terminalBridgeRef,
@@ -61,7 +61,7 @@ export function useTerminalInstances(options: TerminalInstancesOptions) {
     terminalInstances,
     searchAddonsRef,
     settingsRef,
-    mobaColorsEnabledRef,
+    vividColorsEnabledRef,
     activeSessionIdRef,
     sessionsRef,
     isSearchOpenRef,
@@ -79,7 +79,7 @@ export function useTerminalInstances(options: TerminalInstancesOptions) {
   const dataListenersRef = useRef<Map<string, () => void>>(new Map());
   // Output received but not yet parsed by xterm, per session (flow control units: bytes for SSH, chars otherwise).
   const unackedOutputRef = useRef<Map<string, number>>(new Map());
-  const highlightersRef = useRef<Map<string, MobaHighlighterSession>>(new Map());
+  const highlightersRef = useRef<Map<string, SyntaxHighlighterSession>>(new Map());
   const uiCleanupsRef = useRef<Map<string, () => void>>(new Map());
 
   useEffect(() => {
@@ -159,7 +159,7 @@ export function useTerminalInstances(options: TerminalInstancesOptions) {
       const domElement = containerRefs.current.get(session.id);
       if (!domElement) return;
 
-      const highlighter = new MobaHighlighterSession();
+      const highlighter = new SyntaxHighlighterSession();
       highlightersRef.current.set(session.id, highlighter);
 
       const currentSettings = settingsRef.current;
@@ -173,8 +173,8 @@ export function useTerminalInstances(options: TerminalInstancesOptions) {
         smoothScrollDuration: 0,
         fastScrollModifier: 'alt',
         allowProposedApi: true,
-        theme: mobaColorsEnabledRef.current
-          ? { ...MOBAXTERM_THEME }
+        theme: vividColorsEnabledRef.current
+          ? { ...VIVID_TERMINAL_THEME }
           : { ...DEFAULT_TERMINAL_THEME },
       });
 
@@ -303,7 +303,7 @@ export function useTerminalInstances(options: TerminalInstancesOptions) {
             else unacked.delete(session.id);
             window.electronAPI?.ackTerminalData(session.id, size);
           };
-          const formatted = highlighter.process(chunk, mobaColorsEnabledRef.current);
+          const formatted = highlighter.process(chunk, vividColorsEnabledRef.current);
           if (!formatted) {
             acknowledge();
             return;
@@ -494,10 +494,10 @@ export function useTerminalInstances(options: TerminalInstancesOptions) {
     scheduleFit();
   }, [settings]);
 
-  // Live MobaXterm Theme & Syntax Highlighting Toggle
+  // Live colour theme & syntax highlighting toggle
   useEffect(() => {
-    const nextTheme = mobaColorsEnabled
-      ? { ...MOBAXTERM_THEME }
+    const nextTheme = vividColorsEnabled
+      ? { ...VIVID_TERMINAL_THEME }
       : { ...DEFAULT_TERMINAL_THEME };
 
     terminalInstances.current.forEach(({ term }) => {
@@ -525,5 +525,5 @@ export function useTerminalInstances(options: TerminalInstancesOptions) {
         // Ignore
       }
     });
-  }, [mobaColorsEnabled, terminalInstances]);
+  }, [vividColorsEnabled, terminalInstances]);
 }

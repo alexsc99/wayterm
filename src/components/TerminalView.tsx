@@ -132,9 +132,9 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
     fontSize,
     setFontSize,
     updateSettings,
-    mobaColorsEnabled,
-    setMobaColorsEnabled,
-    mobaColorsEnabledRef,
+    vividColorsEnabled,
+    setVividColorsEnabled,
+    vividColorsEnabledRef,
   } = useTerminalPreferences();
   const {
     isSearchOpen,
@@ -357,7 +357,7 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
     activeSessionId,
     isVisible,
     settings,
-    mobaColorsEnabled,
+    vividColorsEnabled,
     renamingId,
     menuAnchor,
     terminalBridgeRef,
@@ -365,7 +365,7 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
     terminalInstances,
     searchAddonsRef,
     settingsRef,
-    mobaColorsEnabledRef,
+    vividColorsEnabledRef,
     activeSessionIdRef,
     sessionsRef,
     searchInputRef,
@@ -465,8 +465,8 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
         onOpenSFTPForHost={onOpenSFTPForHost}
         onSerialBreak={handleSerialBreak}
         copiedBadgeVisible={copiedBadgeVisible}
-        mobaColorsEnabled={mobaColorsEnabled}
-        onToggleMobaColors={() => setMobaColorsEnabled((prev) => !prev)}
+        vividColorsEnabled={vividColorsEnabled}
+        onToggleVividColors={() => setVividColorsEnabled((prev) => !prev)}
         onClearScreen={handleClearScreen}
         fontSize={fontSize}
         onFontSizeChange={setFontSize}
@@ -506,7 +506,7 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
         ref={viewportRef}
         className="flex-1 min-h-0 min-w-0 relative overflow-hidden"
         style={{
-          backgroundColor: mobaColorsEnabled ? '#0c0e14' : '#09090b',
+          backgroundColor: vividColorsEnabled ? '#0c0e14' : '#09090b',
         }}
       >
         {isSearchOpen && (

@@ -1,10 +1,10 @@
 import type { ITheme } from '@xterm/xterm';
 
 /**
- * Classic MobaXterm Dark color palette with vivid, high-contrast ANSI colors
+ * Vivid dark colour palette with high-contrast ANSI colours
  * and crisp legibility for dark backgrounds (including readable bright blues).
  */
-export const MOBAXTERM_THEME: ITheme = {
+export const VIVID_TERMINAL_THEME: ITheme = {
   background: '#0c0e14',
   foreground: '#e6e8ee',
   cursor: '#a6e22e',
@@ -29,7 +29,7 @@ export const MOBAXTERM_THEME: ITheme = {
 };
 
 /**
- * Original Putty+ Zinc dark palette (used when MobaXterm mode is toggled off).
+ * Original zinc dark palette (used when the vivid colour mode is toggled off).
  */
 export const DEFAULT_TERMINAL_THEME: ITheme = {
   background: '#09090b',
@@ -57,7 +57,7 @@ export const DEFAULT_TERMINAL_THEME: ITheme = {
 
 // Single-pass token regex for uncolored terminal output.
 // Priority order prevents sub-matches inside URLs, MACs, IPs, dates, or file paths.
-const MOBA_TOKEN_REGEX = new RegExp(
+const TOKEN_REGEX = new RegExp(
   [
     // 1. URLs
     '(?<url>\\bhttps?:\\/\\/[^\\s"\'<>()[\\]]+)',
@@ -87,12 +87,12 @@ const MOBA_TOKEN_REGEX = new RegExp(
 const CASE_SENSITIVE_UPPER = new Set(['ok', 'up', 'yes', 'true', 'down', 'err', 'dead']);
 
 /**
- * Stateful per-session stream highlighter modeled after MobaXterm:
+ * Stateful per-session stream highlighter:
  * - Preserves existing ANSI colors (e.g. `ls --color`, `git`, themed prompts)
  * - Automatically bypasses Alternate Screen Buffer TUI apps (`vim`, `nano`, `htop`, `less`)
  * - Safely decodes streaming UTF-8 binary buffers and handles split ANSI escape sequences
  */
-export class MobaHighlighterSession {
+export class SyntaxHighlighterSession {
   private decoder = new TextDecoder('utf-8');
   private pendingEscape = '';
   private inAltScreen = false;
@@ -125,7 +125,7 @@ export class MobaHighlighterSession {
     this.pendingEscape = '';
 
     // Even when highlighting is disabled, track AltScreen / SGR state lightly
-    // so toggling MobaXterm mode mid-session behaves accurately.
+    // so toggling the colour mode mid-session behaves accurately.
     let out = '';
     let plainStart = 0;
     let i = 0;
@@ -353,7 +353,7 @@ export class MobaHighlighterSession {
 
     const boldReset = this.isBold ? '' : ';22';
 
-    return segment.replace(MOBA_TOKEN_REGEX, (match, ...args) => {
+    return segment.replace(TOKEN_REGEX, (match, ...args) => {
       const groups = args[args.length - 1] as Record<string, string | undefined>;
       const fullStr = args[args.length - 2] as string;
       const offset = args[args.length - 3] as number;

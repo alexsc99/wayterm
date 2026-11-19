@@ -19,8 +19,8 @@ interface TerminalToolbarProps {
   onOpenSFTPForHost?: (host: SSHHost) => void;
   onSerialBreak: () => void;
   copiedBadgeVisible: boolean;
-  mobaColorsEnabled: boolean;
-  onToggleMobaColors: () => void;
+  vividColorsEnabled: boolean;
+  onToggleVividColors: () => void;
   onClearScreen: () => void;
   fontSize: number;
   onFontSizeChange: (updater: number | ((prev: number) => number)) => void;
@@ -45,8 +45,8 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
   onOpenSFTPForHost,
   onSerialBreak,
   copiedBadgeVisible,
-  mobaColorsEnabled,
-  onToggleMobaColors,
+  vividColorsEnabled,
+  onToggleVividColors,
   onClearScreen,
   fontSize,
   onFontSizeChange,
@@ -114,14 +114,14 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
         {/* Colour theme & live syntax highlighting toggle */}
         <button
           type="button"
-          onClick={onToggleMobaColors}
+          onClick={onToggleVividColors}
           className={`px-2 py-1 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 border cursor-pointer ${
-            mobaColorsEnabled
+            vividColorsEnabled
               ? 'bg-lime-500/15 text-lime-300 border-lime-500/40 hover:bg-lime-500/25'
               : 'text-zinc-400 hover:text-zinc-200 border-transparent hover:bg-zinc-800'
           }`}
           title={
-            mobaColorsEnabled
+            vividColorsEnabled
               ? 'Syntax-Farben & Live-Hervorhebung aktiv (Klicken zum Ausschalten)'
               : 'Syntax-Farben & Live-Hervorhebung einschalten'
           }

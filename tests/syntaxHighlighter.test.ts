@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { MobaHighlighterSession } from '../src/utils/mobaxterm';
+import { SyntaxHighlighterSession } from '../src/utils/terminalColors';
 
 const ERROR_HL = '\x1b[1;91mERROR\x1b[39;22m';
 const encoder = new TextEncoder();
 
 function run(chunks: Array<string | Uint8Array>, enabled = true): string[] {
-  const session = new MobaHighlighterSession();
+  const session = new SyntaxHighlighterSession();
   return chunks.map((chunk) => session.process(chunk, enabled));
 }
 
-describe('MobaHighlighterSession', () => {
+describe('SyntaxHighlighterSession', () => {
   it('highlights plain tokens when enabled', () => {
     expect(run(['disk ERROR here'])).toEqual([`disk ${ERROR_HL} here`]);
   });
