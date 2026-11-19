@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#27272a"/>
+      <stop offset="1" stop-color="#09090b"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#52525b"/>
+      <stop offset="1" stop-color="#18181b"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#60a5fa"/>
+      <stop offset="1" stop-color="#2563eb"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Soft drop shadow from stacked translucent rects (SVG filters band when rasterized) -->
+  <g fill="#000">
+    <rect x="98" y="104" width="828" height="828" rx="188" opacity="0.14"/>
+    <rect x="96" y="106" width="832" height="832" rx="190" opacity="0.10"/>
+    <rect x="94" y="108" width="836" height="836" rx="192" opacity="0.07"/>
+    <rect x="92" y="110" width="840" height="840" rx="194" opacity="0.05"/>
+    <rect x="90" y="112" width="844" height="844" rx="196" opacity="0.03"/>
+  </g>
+
+  <!-- macOS icon grid: 824px body inside the 1024px canvas -->
+  <rect x="100" y="100" width="824" height="824" rx="186" fill="url(#rim)"/>
+  <rect x="106" y="106" width="812" height="812" rx="180" fill="url(#body)"/>
+
+  <!-- Window chrome -->
+  <circle cx="214" cy="212" r="18" fill="#3f3f46"/>
+  <circle cx="270" cy="212" r="18" fill="#3f3f46"/>
+  <circle cx="326" cy="212" r="18" fill="#3f3f46"/>
+  <rect x="106" y="268" width="812" height="4" fill="#27272a"/>
+
+  <!-- Prompt chevron and cursor -->
+  <path d="M236 440 L392 548 L236 656" fill="none" stroke="#e4e4e7" stroke-width="56" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="440" y="626" width="196" height="56" rx="28" fill="#a1a1aa"/>
+
+  <!-- Plus accent -->
+  <g filter="url(#glow)">
+    <circle cx="742" cy="420" r="118" fill="url(#accent)"/>
+  </g>
+  <path d="M742 360 V480 M682 420 H802" stroke="#ffffff" stroke-width="40" stroke-linecap="round"/>
+</svg>

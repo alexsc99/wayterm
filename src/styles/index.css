@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  --color-app-bg: #09090b;
+  --color-app-text: #f4f4f5;
+  --color-surface: #18181b;
+  --color-border: #3f3f46;
+  --color-accent: #93c5fd;
+  --color-accent-surface: rgba(37, 99, 235, 0.2);
+  --color-text-muted: #a1a1aa;
+  --color-focus: #93c5fd;
+  --color-scrollbar: #52525b;
+  --color-scrollbar-hover: #71717a;
+  --focus-ring-width: 2px;
+}
+
+@layer base {
+  body {
+    @apply font-sans antialiased;
+    background: var(--color-app-bg);
+    color: var(--color-app-text);
+    -webkit-app-region: no-drag;
+  }
+}
+
+/* Keep secondary copy readable on the application's dark surfaces. */
+.text-zinc-500 {
+  color: var(--color-text-muted);
+}
+
+.app-navigation {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+.app-navigation-current {
+  background: var(--color-accent-surface);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.titlebar-drag-region {
+  -webkit-app-region: drag;
+}
+
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-scrollbar);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-scrollbar-hover);
+}
