@@ -8,10 +8,12 @@ import {
   Key,
   Cable,
   CornerDownLeft,
+  Palette,
   X,
 } from 'lucide-react';
 import { SSHHost, SSHSession } from '../types';
 import { ActiveTab } from './Navigation';
+import { APP_THEMES } from '../utils/appThemes';
 
 export interface CommandPaletteProps {
   isOpen: boolean;
@@ -23,9 +25,12 @@ export interface CommandPaletteProps {
   onSelectTab: (tab: ActiveTab) => void;
   activeSessions: SSHSession[];
   onSelectSession: (sessionId: string) => void;
+  onOpenAppearance?: () => void;
+  appThemeId?: string;
+  onSetAppTheme?: (id: string) => void;
 }
 
-type PaletteCategory = 'Aktionen' | 'Offene Sitzungen' | 'SSH-Server';
+type PaletteCategory = 'Aktionen' | 'Themes' | 'Offene Sitzungen' | 'SSH-Server';
 
 interface PaletteItem {
   id: string;
@@ -47,6 +52,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onSelectTab,
   activeSessions,
   onSelectSession,
+  onOpenAppearance,
+  appThemeId,
+  onSetAppTheme,
 }) => {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -169,6 +177,40 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       },
     ];
 
+    // Items are pushed in category display order so keyboard navigation matches the rendered list.
+    if (onOpenAppearance) {
+      items.push({
+        id: 'appearance-open',
+        category: 'Aktionen',
+        title: 'Erscheinungsbild & Themes öffnen …',
+        subtitle: 'App-Theme, Akzentfarbe und Terminal-Farben',
+        icon: Palette,
+        badge: '⌘,',
+        action: () => {
+          onOpenAppearance();
+          onClose();
+        },
+      });
+    }
+
+    // App themes
+    if (onSetAppTheme) {
+      APP_THEMES.forEach((theme) => {
+        items.push({
+          id: `theme-${theme.id}`,
+          category: 'Themes',
+          title: `Theme: ${theme.label}`,
+          subtitle: theme.mode === 'dark' ? 'Dunkles App-Theme' : 'Helles App-Theme',
+          icon: Palette,
+          badge: theme.id === appThemeId ? 'Aktiv' : undefined,
+          action: () => {
+            onSetAppTheme(theme.id);
+            onClose();
+          },
+        });
+      });
+    }
+
     // Open Sessions
     if (activeSessions && activeSessions.length > 0) {
       activeSessions.forEach((session) => {
@@ -223,6 +265,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     onSelectSession,
     onConnectSSH,
     onClose,
+    onOpenAppearance,
+    appThemeId,
+    onSetAppTheme,
   ]);
 
   // Filter items based on query
@@ -290,6 +335,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
   const categories: PaletteCategory[] = [
     'Aktionen',
+    'Themes',
     'Offene Sitzungen',
     'SSH-Server',
   ];

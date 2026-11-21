@@ -84,6 +84,8 @@ declare global {
 
       // System
       getSystemInfo: () => Promise<{ platform: string; arch: string }>;
+      /** Aligns the native window theme and background with the app theme. */
+      setWindowAppearance: (appearance: { mode: 'dark' | 'light'; backgroundColor: string }) => void;
 
       // Dialogs
       showOpenFileDialog: (options?: {

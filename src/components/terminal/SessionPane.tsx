@@ -10,7 +10,9 @@ interface SessionPaneProps {
   pane: number;
   highlightBroadcast: boolean;
   style: React.CSSProperties;
-  chooser: React.ReactNode;
+  /** True when this pane is the focused pane of a split; false in single view. */
+  isFocusedPane: boolean;
+  header: React.ReactNode;
   reconnectState?: SessionReconnectState;
   /** Element xterm opens into; must stay mounted for the session's lifetime. */
   surfaceRef: (element: HTMLDivElement | null) => void;
@@ -30,7 +32,8 @@ export const SessionPane: React.FC<SessionPaneProps> = ({
   pane,
   highlightBroadcast,
   style,
-  chooser,
+  isFocusedPane,
+  header,
   reconnectState,
   surfaceRef,
   onSurfacePointerDown,
@@ -43,6 +46,7 @@ export const SessionPane: React.FC<SessionPaneProps> = ({
   <div
     data-session-id={session.id}
     data-pane={visible ? pane + 1 : undefined}
+    data-focused-pane={isFocusedPane || undefined}
     aria-label={`Terminal ${session.title}`}
     className={`absolute min-w-0 min-h-0 flex flex-col overflow-hidden ${
       highlightBroadcast ? 'ring-1 ring-inset ring-amber-500/50' : ''
@@ -55,7 +59,7 @@ export const SessionPane: React.FC<SessionPaneProps> = ({
       if ((event.target as HTMLElement).closest('.xterm')) onTerminalFocus();
     }}
   >
-    {chooser && <div key="chooser" className="shrink-0">{chooser}</div>}
+    {header && <div key="header" className="shrink-0">{header}</div>}
     {!session.connected && visible && reconnectState && (
       <div className="shrink-0 px-3 py-1.5 bg-amber-950/80 border-b border-amber-800/60 flex items-center justify-between gap-2 text-xs">
         <span className="flex items-center gap-1.5 text-amber-200 truncate">
@@ -121,7 +125,6 @@ export const SessionPane: React.FC<SessionPaneProps> = ({
     <div
       key="terminal"
       data-terminal-surface
-      ref={surfaceRef}
       onDragOver={(e) => {
         if (e.dataTransfer?.types.includes('Files')) {
           e.preventDefault();
@@ -141,6 +144,9 @@ export const SessionPane: React.FC<SessionPaneProps> = ({
         }
       }}
       className="flex-1 min-w-0 min-h-0 p-2 overflow-hidden"
-    />
+    >
+      {/* xterm's FitAddon measures this element, so it must not carry padding or borders. */}
+      <div ref={surfaceRef} className="h-full w-full min-w-0 min-h-0 overflow-hidden" />
+    </div>
   </div>
 );

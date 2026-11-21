@@ -4,7 +4,7 @@ import { loadTerminalSettings, saveTerminalSettings } from '../utils/terminalSet
 
 const COLORS_STORAGE_KEY = 'putty_plus_mobaxterm_colors'; // legacy key name, kept so saved preferences survive
 
-/** Persistent terminal settings and the colour theme toggle. */
+/** Persistent terminal settings and the live syntax highlighting toggle. */
 export function useTerminalPreferences() {
   const [settings, setSettings] = useState<TerminalSettings>(() => loadTerminalSettings());
   const settingsRef = useRef<TerminalSettings>(settings);
@@ -32,8 +32,8 @@ export function useTerminalPreferences() {
     });
   }, [settings.sessionLogging, settings.sessionLogDirectory]);
 
-  // Colour theme & live syntax highlighting state
-  const [vividColorsEnabled, setVividColorsEnabled] = useState<boolean>(() => {
+  // Live syntax highlighting state
+  const [syntaxHighlighting, setSyntaxHighlighting] = useState<boolean>(() => {
     try {
       const saved = localStorage.getItem(COLORS_STORAGE_KEY);
       return saved !== null ? saved === 'true' : true;
@@ -41,16 +41,16 @@ export function useTerminalPreferences() {
       return true;
     }
   });
-  const vividColorsEnabledRef = useRef<boolean>(vividColorsEnabled);
-  vividColorsEnabledRef.current = vividColorsEnabled;
+  const syntaxHighlightingRef = useRef<boolean>(syntaxHighlighting);
+  syntaxHighlightingRef.current = syntaxHighlighting;
 
   useEffect(() => {
     try {
-      localStorage.setItem(COLORS_STORAGE_KEY, String(vividColorsEnabled));
+      localStorage.setItem(COLORS_STORAGE_KEY, String(syntaxHighlighting));
     } catch {
       // Ignore storage errors
     }
-  }, [vividColorsEnabled]);
+  }, [syntaxHighlighting]);
 
   return {
     settings,
@@ -58,8 +58,8 @@ export function useTerminalPreferences() {
     fontSize,
     setFontSize,
     updateSettings,
-    vividColorsEnabled,
-    setVividColorsEnabled,
-    vividColorsEnabledRef,
+    syntaxHighlighting,
+    setSyntaxHighlighting,
+    syntaxHighlightingRef,
   };
 }

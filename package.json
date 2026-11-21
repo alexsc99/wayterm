@@ -1,6 +1,6 @@
 {
   "name": "wayterm",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "description": "Modern SSH, SFTP, and Key Manager for macOS",
   "main": "dist-electron/main.js",
   "scripts": {

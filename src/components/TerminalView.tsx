@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { SearchAddon } from '@xterm/addon-search';
+import type { ITheme } from '@xterm/xterm';
 import '@xterm/xterm/css/xterm.css';
 import { SSHSession, SSHHost, CommandSnippet } from '../types';
 import { loadSnippets, saveSnippets } from '../utils/snippets';
@@ -7,13 +8,13 @@ import { TerminalSettingsPopover } from './TerminalSettingsPopover';
 import { TerminalSnippetsPopover } from './TerminalSnippetsPopover';
 import { TerminalContextMenu } from './TerminalContextMenu';
 import { MultilinePasteModal } from './MultilinePasteModal';
-import type { Pane, PaneSessions, SessionReconnectState, TerminalBridge, TerminalInstance } from './terminal/model';
+import type { Pane, SessionReconnectState, TerminalBridge, TerminalInstance } from './terminal/model';
 import { TerminalTabBar } from './terminal/TerminalTabBar';
 import { TerminalToolbar } from './terminal/TerminalToolbar';
 import { NewSessionMenu } from './terminal/NewSessionMenu';
 import { TerminalSearchOverlay } from './terminal/TerminalSearchOverlay';
 import { SessionPane } from './terminal/SessionPane';
-import { EmptyPane, PaneChooser, SplitDivider } from './terminal/SplitPanes';
+import { EmptyPane, PaneHeader, SplitDivider } from './terminal/SplitPanes';
 import { useSplitWorkspace } from '../hooks/useSplitWorkspace';
 import { useSessionRename } from '../hooks/useSessionRename';
 import { useTerminalPreferences } from '../hooks/useTerminalPreferences';
@@ -45,6 +46,9 @@ interface TerminalViewProps {
   onCancelAutoReconnect?: (id: string) => void;
   terminalBridgeRef?: React.MutableRefObject<TerminalBridge | null>;
   isVisible?: boolean;
+  /** Resolved xterm colour theme of the selected appearance. */
+  terminalTheme: ITheme;
+  onOpenAppearance?: () => void;
 }
 
 export const TerminalView: React.FC<TerminalViewProps> = ({
@@ -67,6 +71,8 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
   onCancelAutoReconnect,
   terminalBridgeRef,
   isVisible = true,
+  terminalTheme,
+  onOpenAppearance,
 }) => {
   const containerRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const terminalInstances = useRef<Map<string, TerminalInstance>>(new Map());
@@ -94,15 +100,21 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
   const {
     workspace,
     workspaceRef,
-    setWorkspace,
     isSplit,
     splitRatio,
     viewportRef,
+    visibleIds,
     changeLayout,
+    selectSession: selectWorkspaceSession,
+    assignSessionToPane,
+    focusPane,
+    swapPanes,
     scheduleFit,
+    surfaceRef,
     ratioBounds,
     dragDividerTo,
     stepDivider,
+    resetDivider,
     paneStyle,
   } = useSplitWorkspace({
     sessions,
@@ -132,9 +144,9 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
     fontSize,
     setFontSize,
     updateSettings,
-    vividColorsEnabled,
-    setVividColorsEnabled,
-    vividColorsEnabledRef,
+    syntaxHighlighting,
+    setSyntaxHighlighting,
+    syntaxHighlightingRef,
   } = useTerminalPreferences();
   const {
     isSearchOpen,
@@ -167,29 +179,22 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
   const [activitySessionIds, setActivitySessionIds] = useState<Set<string>>(() => new Set());
   const [bellSessionIds, setBellSessionIds] = useState<Set<string>>(() => new Set());
 
+  // A session that becomes the active one has been seen: drop its activity/bell markers.
+  useEffect(() => {
+    const seenId = activeSessionId;
+    if (!seenId) return;
+    const withoutSeen = (prev: Set<string>) => {
+      if (!prev.has(seenId)) return prev;
+      const next = new Set(prev);
+      next.delete(seenId);
+      return next;
+    };
+    setActivitySessionIds(withoutSeen);
+    setBellSessionIds(withoutSeen);
+  }, [activeSessionId]);
+
   const selectSession = (id: string, focusTerminal = false) => {
-    const current = workspaceRef.current;
-    const visiblePane = current.panes.indexOf(id);
-    const focused = current.layout === 'single' ? 0 : visiblePane >= 0 ? visiblePane as Pane : current.focused;
-    const panes: PaneSessions = [...current.panes];
-    panes[focused] = id;
-    const next = { ...current, panes, focused };
-    workspaceRef.current = next;
-    setWorkspace(next);
-    activeSessionIdRef.current = id;
-    onSelectSessionRef.current(id);
-    setActivitySessionIds((prev) => {
-      if (!prev.has(id)) return prev;
-      const nextSet = new Set(prev);
-      nextSet.delete(id);
-      return nextSet;
-    });
-    setBellSessionIds((prev) => {
-      if (!prev.has(id)) return prev;
-      const nextSet = new Set(prev);
-      nextSet.delete(id);
-      return nextSet;
-    });
+    selectWorkspaceSession(id);
     if (focusTerminal) {
       requestAnimationFrame(() => {
         if (!renameInputRef.current && !menuRef.current && document.activeElement !== searchInputRef.current && activeSessionIdRef.current === id && isVisibleRef.current) terminalInstances.current.get(id)?.term.focus();
@@ -198,14 +203,7 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
   };
 
   const openSessionMenu = (anchor: HTMLElement, pane = workspaceRef.current.focused) => {
-    const next = { ...workspaceRef.current, focused: pane };
-    workspaceRef.current = next;
-    setWorkspace(next);
-    const selected = next.panes[pane];
-    if (selected && selected !== activeSessionIdRef.current) {
-      activeSessionIdRef.current = selected;
-      onSelectSessionRef.current(selected);
-    }
+    focusPane(pane);
     setMenuAnchor(anchor);
   };
 
@@ -227,9 +225,9 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
 
   const sendInputWithBroadcast = (originSession: SSHSession, data: string) => {
     if (broadcastEnabledRef.current && workspaceRef.current.layout !== 'single') {
-      const visibleIds = new Set(workspaceRef.current.panes.filter((id): id is string => Boolean(id)));
+      const broadcastIds = new Set(workspaceRef.current.panes.filter((id): id is string => Boolean(id)));
       sessionsRef.current.forEach((s) => {
-        if (visibleIds.has(s.id)) {
+        if (broadcastIds.has(s.id)) {
           sendInputToSession(s, data);
         }
       });
@@ -302,11 +300,16 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
     saveSnippets(next);
   };
 
-  const focusPane = (pane: Pane) => {
+  /** Keyboard pane switch: focuses the pane (even an empty one) and moves keyboard focus into its terminal. */
+  const focusPaneFromKeyboard = (pane: Pane) => {
+    focusPane(pane);
     const targetId = workspaceRef.current.panes[pane];
-    if (targetId) {
-      selectSession(targetId, true);
-    }
+    if (targetId) selectSession(targetId, true);
+  };
+
+  const focusActiveTerminal = () => {
+    const activeId = activeSessionIdRef.current;
+    if (activeId) terminalInstances.current.get(activeId)?.term.focus();
   };
 
   const switchSessionByKey = (event: KeyboardEvent) => {
@@ -356,8 +359,9 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
     sessions,
     activeSessionId,
     isVisible,
+    visibleIds,
     settings,
-    vividColorsEnabled,
+    terminalTheme,
     renamingId,
     menuAnchor,
     terminalBridgeRef,
@@ -365,7 +369,7 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
     terminalInstances,
     searchAddonsRef,
     settingsRef,
-    vividColorsEnabledRef,
+    syntaxHighlightingRef,
     activeSessionIdRef,
     sessionsRef,
     searchInputRef,
@@ -378,7 +382,7 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
     onOpenCommandPaletteRef,
     changeLayout,
     workspaceRef,
-    focusPane,
+    focusPane: focusPaneFromKeyboard,
     copyTextToClipboard,
     readTextFromClipboard,
     pasteWithGuard,
@@ -411,22 +415,21 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
   }, [activeSessionId]);
 
   const activeSession = sessions.find((session) => session.id === activeSessionId) || null;
-  const paneChooser = (pane: Pane, sessionId: string | null) => (
-    <PaneChooser
+  const paneHeader = (pane: Pane, sessionId: string | null) => (
+    <PaneHeader
       pane={pane}
+      layout={workspace.layout}
       sessionId={sessionId}
       isFocused={workspace.focused === pane}
       sessions={sessions}
-      onFocusChooser={(focusedId) => {
-        if (focusedId && focusedId !== activeSessionIdRef.current) selectSession(focusedId);
-      }}
-      onChooseSession={(chooserPane, chosenId) => {
-        const next = { ...workspaceRef.current, focused: chooserPane };
-        workspaceRef.current = next;
-        setWorkspace(next);
-        if (chosenId) selectSession(chosenId);
-      }}
+      onFocusPane={focusPane}
+      onChooseSession={assignSessionToPane}
       onOpenSessionMenu={openSessionMenu}
+      onSwapPanes={swapPanes}
+      onMaximize={(maximizedPane) => {
+        focusPane(maximizedPane);
+        changeLayout('single');
+      }}
     />
   );
 
@@ -442,6 +445,7 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
       <TerminalTabBar
         sessions={sessions}
         activeSessionId={activeSessionId}
+        splitPanes={isSplit ? workspace.panes : null}
         bellSessionIds={bellSessionIds}
         activitySessionIds={activitySessionIds}
         reconnectStates={reconnectStates}
@@ -465,8 +469,8 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
         onOpenSFTPForHost={onOpenSFTPForHost}
         onSerialBreak={handleSerialBreak}
         copiedBadgeVisible={copiedBadgeVisible}
-        vividColorsEnabled={vividColorsEnabled}
-        onToggleVividColors={() => setVividColorsEnabled((prev) => !prev)}
+        syntaxHighlighting={syntaxHighlighting}
+        onToggleSyntaxHighlighting={() => setSyntaxHighlighting((prev) => !prev)}
         onClearScreen={handleClearScreen}
         fontSize={fontSize}
         onFontSizeChange={setFontSize}
@@ -487,6 +491,8 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
           setIsSnippetsOpen(false);
           setIsSettingsOpen((prev) => !prev);
         }}
+        onSwapPanes={swapPanes}
+        onOpenAppearance={onOpenAppearance}
       />
       {menuAnchor && isVisible && (
         <NewSessionMenu
@@ -505,9 +511,7 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
       <div
         ref={viewportRef}
         className="flex-1 min-h-0 min-w-0 relative overflow-hidden"
-        style={{
-          backgroundColor: vividColorsEnabled ? '#0c0e14' : '#09090b',
-        }}
+        style={{ backgroundColor: terminalTheme.background }}
       >
         {isSearchOpen && (
           <TerminalSearchOverlay
@@ -537,12 +541,10 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
               pane={pane}
               highlightBroadcast={isSplit && broadcastEnabled && visible}
               style={{ ...paneStyle(pane), display: visible ? 'flex' : 'none' }}
-              chooser={isSplit && visible && paneChooser(pane, session.id)}
+              isFocusedPane={isSplit && visible && workspace.focused === pane}
+              header={isSplit && visible && paneHeader(pane, session.id)}
               reconnectState={reconnectStates[session.id]}
-              surfaceRef={(element) => {
-                if (element) containerRefs.current.set(session.id, element);
-                else containerRefs.current.delete(session.id);
-              }}
+              surfaceRef={surfaceRef(session.id)}
               onSurfacePointerDown={() => selectSession(session.id)}
               onTerminalFocus={() => {
                 if (activeSessionIdRef.current !== session.id || workspaceRef.current.focused !== pane) selectSession(session.id);
@@ -565,8 +567,10 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
             key={`empty-${pane}`}
             pane={pane}
             style={paneStyle(pane)}
-            chooser={isSplit && paneChooser(pane, null)}
+            header={isSplit && paneHeader(pane, null)}
+            isFocused={isSplit && workspace.focused === pane}
             hasSessions={sessions.length > 0}
+            onFocusPane={focusPane}
             onOpenSessionMenu={openSessionMenu}
             onNewLocalSession={onNewLocalSession}
           />
@@ -578,6 +582,8 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
             bounds={ratioBounds()}
             onDrag={dragDividerTo}
             onStep={stepDivider}
+            onReset={resetDivider}
+            onDragEnd={focusActiveTerminal}
           />
         )}
       </div>

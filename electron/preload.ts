@@ -147,6 +147,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // System
   getSystemInfo: () => ipcRenderer.invoke('system:info'),
+  setWindowAppearance: (appearance: { mode: 'dark' | 'light'; backgroundColor: string }) =>
+    ipcRenderer.send('window:setAppearance', appearance),
 
   // Dialogs
   showOpenFileDialog: (options?: Electron.OpenDialogOptions) => ipcRenderer.invoke('dialog:openFile', options),

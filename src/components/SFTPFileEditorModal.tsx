@@ -143,7 +143,7 @@ export const SFTPFileEditorModal: React.FC<SFTPFileEditorModalProps> = ({
         )}
 
         {/* Editor Body */}
-        <div className="flex-1 flex overflow-hidden bg-[#09090b] relative font-mono text-xs">
+        <div className="flex-1 flex overflow-hidden bg-zinc-950 relative font-mono text-xs">
           {/* Line Numbers Gutter */}
           <div className="w-12 py-3 px-2 bg-zinc-950 border-r border-zinc-800/80 text-zinc-600 select-none text-right font-mono overflow-hidden">
             {lines.slice(0, 5000).map((_, i) => (

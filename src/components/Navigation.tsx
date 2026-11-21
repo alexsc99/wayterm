@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { version as appVersion } from '../../package.json';
-import { Server, Terminal, FolderGit2, Send, Key, Plus, Cable, PanelLeftClose, PanelLeft } from 'lucide-react';
+import { Server, Terminal, FolderGit2, Send, Key, Plus, Cable, PanelLeftClose, PanelLeft, Palette } from 'lucide-react';
 export type ActiveTab = 'hosts' | 'terminal' | 'sftp' | 'scp' | 'keys';
 
 interface NavigationProps {
@@ -11,6 +11,7 @@ interface NavigationProps {
   onOpenSerialModal?: () => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
+  onOpenAppearance?: () => void;
 }
 
 export const Navigation: React.FC<NavigationProps> = ({
@@ -21,6 +22,7 @@ export const Navigation: React.FC<NavigationProps> = ({
   onOpenSerialModal,
   isCollapsed = false,
   onToggleCollapse,
+  onOpenAppearance,
 }) => {
   const [systemBadge, setSystemBadge] = useState('macOS arm64');
 
@@ -216,6 +218,16 @@ export const Navigation: React.FC<NavigationProps> = ({
                 <Cable className="w-4 h-4 text-amber-400" />
               </button>
             )}
+            {onOpenAppearance && (
+              <button
+                onClick={onOpenAppearance}
+                className="w-10 h-10 rounded-xl bg-zinc-800/60 hover:bg-zinc-800 text-zinc-300 flex items-center justify-center transition-colors cursor-pointer"
+                aria-label="Erscheinungsbild & Themes"
+                title="Erscheinungsbild & Themes"
+              >
+                <Palette className="w-4 h-4" />
+              </button>
+            )}
           </div>
         ) : (
           <>
@@ -239,6 +251,20 @@ export const Navigation: React.FC<NavigationProps> = ({
                 </button>
               )}
             </div>
+
+            {onOpenAppearance && (
+              <button
+                onClick={onOpenAppearance}
+                className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60 transition-colors cursor-pointer"
+                title="Erscheinungsbild & Themes (⌘,)"
+              >
+                <span className="flex items-center gap-2 min-w-0">
+                  <Palette className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">Erscheinungsbild</span>
+                </span>
+                <span className="text-[10px] font-mono text-zinc-500 shrink-0">⌘,</span>
+              </button>
+            )}
 
             <div className="flex items-center justify-between px-2 pt-1 text-[10px] text-zinc-500 font-mono">
               <span>v{appVersion}</span>

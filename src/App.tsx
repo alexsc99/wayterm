@@ -10,12 +10,16 @@ import { SFTPExplorer } from './components/SFTPExplorer';
 import { SCPBuilder } from './components/SCPBuilder';
 import { SerialConnectModal } from './components/SerialConnectModal';
 import { CommandPalette } from './components/CommandPalette';
+import { AppearanceModal } from './components/AppearanceModal';
 import { ToastContainer, ToastItem } from './components/Toast';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { Lock, AlertCircle, X, Server, Search, Activity, Wifi, Terminal, Cable, Laptop, PanelLeft } from 'lucide-react';
+import { Lock, AlertCircle, X, Server, Search, Activity, Wifi, Terminal, Cable, Laptop, PanelLeft, Palette } from 'lucide-react';
 import { loadTerminalSettings } from './utils/terminalSettings';
+import { getAppTheme } from './utils/appThemes';
+import { useAppearance } from './hooks/useAppearance';
 
 const OPEN_SESSIONS_STORAGE_KEY = 'putty_plus_open_sessions';
+const SIDEBAR_COLLAPSED_STORAGE_KEY = 'putty_plus_sidebar_collapsed';
 const AUTO_RECONNECT_DELAYS_S = [2, 4, 8, 16, 30];
 const AUTO_RECONNECT_MAX_ATTEMPTS = 10;
 // Retrying cannot fix these: rejected credentials/passphrase, or an unconfirmed/broken host key.
@@ -118,7 +122,15 @@ export const App: React.FC = () => {
   const hostModalRequestRef = useRef(0);
   const [isSerialModalOpen, setIsSerialModalOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const { appearance, updateAppearance, terminalTheme } = useAppearance();
+  const [isAppearanceOpen, setIsAppearanceOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [sftpSelectedHost, setSftpSelectedHost] = useState<SSHHost | null>(null);
   const [scpPreselectedHost, setScpPreselectedHost] = useState<SSHHost | null>(null);
@@ -874,9 +886,24 @@ export const App: React.FC = () => {
     });
     return () => unsubscribe?.();
   }, []);
+  // Remember the sidebar state across launches
+  useEffect(() => {
+    try {
+      localStorage.setItem(SIDEBAR_COLLAPSED_STORAGE_KEY, String(isSidebarCollapsed));
+    } catch {
+      // Storage unavailable: the sidebar state simply is not remembered.
+    }
+  }, [isSidebarCollapsed]);
+
   // Global Mac shortcuts: Cmd+T for new terminal tab, Cmd+W to close active terminal tab
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // ⌘, must also work while the terminal's hidden textarea has focus.
+      if (e.metaKey && !e.shiftKey && !e.altKey && e.code === 'Comma') {
+        e.preventDefault();
+        setIsAppearanceOpen((prev) => !prev);
+        return;
+      }
       const target = e.target as HTMLElement | null;
       if (
         target &&
@@ -984,6 +1011,7 @@ export const App: React.FC = () => {
         onOpenSerialModal={() => setIsSerialModalOpen(true)}
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
+        onOpenAppearance={() => setIsAppearanceOpen(true)}
       />
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden min-w-0 bg-zinc-950">
@@ -1002,6 +1030,14 @@ export const App: React.FC = () => {
             <span className="text-zinc-200 font-medium">{tabTitles[currentTab]}</span>
           </div>
           <div className="flex items-center gap-3 no-drag">
+            <button
+              onClick={() => setIsAppearanceOpen(true)}
+              className="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors no-drag cursor-pointer"
+              title="Erscheinungsbild & Themes (⌘,)"
+              aria-label="Erscheinungsbild & Themes (⌘,)"
+            >
+              <Palette className="w-3.5 h-3.5" />
+            </button>
             <button
               onClick={() => setIsCommandPaletteOpen(true)}
               className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-zinc-800/80 hover:bg-zinc-700/80 border border-zinc-700/60 text-xs text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer"
@@ -1072,6 +1108,8 @@ export const App: React.FC = () => {
                 onCancelAutoReconnect={handleCancelAutoReconnect}
                 terminalBridgeRef={terminalBridgeRef}
                 isVisible={currentTab === 'terminal'}
+                terminalTheme={terminalTheme}
+                onOpenAppearance={() => setIsAppearanceOpen(true)}
               />
             </ErrorBoundary>
           </div>
@@ -1320,6 +1358,22 @@ export const App: React.FC = () => {
           onSelectTab={setCurrentTab}
           activeSessions={sessions}
           onSelectSession={setActiveSessionId}
+          onOpenAppearance={() => setIsAppearanceOpen(true)}
+          appThemeId={appearance.appTheme}
+          onSetAppTheme={(id) => {
+            const theme = getAppTheme(id);
+            updateAppearance({ ...appearance, appTheme: theme.id, accent: theme.defaultAccent });
+          }}
+        />
+      </ErrorBoundary>
+
+      {/* Appearance & Themes (⌘,) */}
+      <ErrorBoundary area="Erscheinungsbild" variant="overlay">
+        <AppearanceModal
+          isOpen={isAppearanceOpen}
+          appearance={appearance}
+          onChange={updateAppearance}
+          onClose={() => setIsAppearanceOpen(false)}
         />
       </ErrorBoundary>
 

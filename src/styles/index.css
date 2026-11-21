@@ -2,19 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
+/* The --c-<palette>-<shade> channel variables are written by applyAppTheme() before the first render. */
 :root {
-  color-scheme: dark;
-  --color-app-bg: #09090b;
-  --color-app-text: #f4f4f5;
-  --color-surface: #18181b;
-  --color-border: #3f3f46;
-  --color-accent: #93c5fd;
-  --color-accent-surface: rgba(37, 99, 235, 0.2);
-  --color-text-muted: #a1a1aa;
-  --color-focus: #93c5fd;
-  --color-scrollbar: #52525b;
-  --color-scrollbar-hover: #71717a;
+  --color-app-bg: rgb(var(--c-zinc-950));
+  --color-app-text: rgb(var(--c-zinc-100));
+  --color-surface: rgb(var(--c-zinc-900));
+  --color-border: rgb(var(--c-zinc-700));
+  --color-accent: rgb(var(--c-blue-300));
+  --color-accent-surface: rgb(var(--c-blue-600) / 0.2);
+  --color-text-muted: rgb(var(--c-zinc-400));
+  --color-focus: rgb(var(--c-blue-300));
+  --color-scrollbar: rgb(var(--c-zinc-600));
+  --color-scrollbar-hover: rgb(var(--c-zinc-500));
   --focus-ring-width: 2px;
+}
+
+::selection {
+  background: rgb(var(--c-blue-500) / 0.35);
 }
 
 @layer base {
@@ -26,7 +30,7 @@
   }
 }
 
-/* Keep secondary copy readable on the application's dark surfaces. */
+/* Keep secondary copy readable on the themed surfaces. */
 .text-zinc-500 {
   color: var(--color-text-muted);
 }

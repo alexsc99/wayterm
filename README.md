@@ -4,7 +4,8 @@ SSH-, SFTP-, SCP- und Seriell-Terminal für macOS (Apple Silicon), gebaut mit El
 
 ## Funktionen
 
-- **Terminals:** lokale Shell, SSH und serielle Verbindungen in Tabs, Split-Ansicht, Suche, Befehlspalette (⌘⇧P), Snippets
+- **Terminals:** lokale Shell, SSH und serielle Verbindungen in Tabs, Split-Ansicht (⌘D / ⌘⇧D, Bereiche tauschen, Trenner per Doppelklick zurücksetzen), Suche, Befehlspalette (⌘⇧P), Snippets
+- **Erscheinungsbild (⌘,):** App-Themes (dunkel und hell) mit wählbarer Akzentfarbe, Terminal-Themes als Vorlagen oder mit frei einstellbaren Farben
 - **SSH:** Passwort-, Schlüssel- und ssh-agent-Anmeldung, Jump-Host (ProxyJump), Agent-Weiterleitung, Port-Weiterleitungen (`-L`, `-R`, `-D`/SOCKS5), Host-Key-Prüfung
 - **Stabilität:** Flusskontrolle bei schneller Ausgabe, automatische SSH-Wiederverbindung, Tabs nach dem Neustart wiederherstellen
 - **Dateien:** SFTP-Explorer mit SCP-Fallback, Drag & Drop, Editor für Remote-Dateien

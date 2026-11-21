@@ -1,11 +1,11 @@
 import React, { useEffect, useRef } from 'react';
-import { Terminal } from '@xterm/xterm';
+import { Terminal, type ITheme } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { SearchAddon } from '@xterm/addon-search';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import type { SSHSession, TerminalSettings } from '../types';
-import { VIVID_TERMINAL_THEME, DEFAULT_TERMINAL_THEME, SyntaxHighlighterSession } from '../utils/terminalColors';
+import { SyntaxHighlighterSession } from '../utils/terminalColors';
 import type { TerminalBridge, TerminalInstance, TerminalNoticeTone } from '../components/terminal/model';
 import { createTerminalKeyHandler, type TerminalKeyActions } from './useTerminalShortcuts';
 
@@ -22,9 +22,12 @@ interface TerminalInstancesOptions extends TerminalKeyActions {
   sessions: SSHSession[];
   activeSessionId: string | null;
   isVisible: boolean;
+  /** Ids of the sessions currently shown: one in single view, up to two in split view (stable while unchanged). */
+  visibleIds: string[];
   settings: TerminalSettings;
-  vividColorsEnabled: boolean;
-  /** Focus guards for the WebGL/refocus effect (values of the triggering render). */
+  /** Resolved xterm colour theme (new identity only when colours change). */
+  terminalTheme: ITheme;
+  /** Focus guards for the refocus effect (values of the triggering render). */
   renamingId: string | null;
   menuAnchor: HTMLElement | null;
   terminalBridgeRef?: React.MutableRefObject<TerminalBridge | null>;
@@ -32,7 +35,8 @@ interface TerminalInstancesOptions extends TerminalKeyActions {
   terminalInstances: React.MutableRefObject<Map<string, TerminalInstance>>;
   searchAddonsRef: React.MutableRefObject<Map<string, SearchAddon>>;
   settingsRef: React.MutableRefObject<TerminalSettings>;
-  vividColorsEnabledRef: React.MutableRefObject<boolean>;
+  /** Live syntax highlighting toggle, read for every output chunk. */
+  syntaxHighlightingRef: React.MutableRefObject<boolean>;
   activeSessionIdRef: React.MutableRefObject<string | null>;
   sessionsRef: React.MutableRefObject<SSHSession[]>;
   searchInputRef: React.RefObject<HTMLInputElement>;
@@ -45,15 +49,16 @@ interface TerminalInstancesOptions extends TerminalKeyActions {
 
 /**
  * xterm instance lifecycle per session: creation, addons, input/output wiring with flow-control acks,
- * disposal of closed sessions, the single active WebGL renderer and live settings/theme updates.
+ * disposal of closed sessions, one WebGL renderer per visible pane and live settings/colour theme updates.
  */
 export function useTerminalInstances(options: TerminalInstancesOptions) {
   const {
     sessions,
     activeSessionId,
     isVisible,
+    visibleIds,
     settings,
-    vividColorsEnabled,
+    terminalTheme,
     renamingId,
     menuAnchor,
     terminalBridgeRef,
@@ -61,7 +66,7 @@ export function useTerminalInstances(options: TerminalInstancesOptions) {
     terminalInstances,
     searchAddonsRef,
     settingsRef,
-    vividColorsEnabledRef,
+    syntaxHighlightingRef,
     activeSessionIdRef,
     sessionsRef,
     isSearchOpenRef,
@@ -75,7 +80,11 @@ export function useTerminalInstances(options: TerminalInstancesOptions) {
     setBellSessionIds,
     setActivitySessionIds,
   } = options;
-  const activeWebglRef = useRef<{ sessionId: string; addon: WebglAddon } | null>(null);
+  // One WebGL renderer per visible pane, keyed by session id.
+  const webglAddonsRef = useRef<Map<string, WebglAddon>>(new Map());
+  // Latest theme for terminals created after a theme change.
+  const terminalThemeRef = useRef<ITheme>(terminalTheme);
+  terminalThemeRef.current = terminalTheme;
   const dataListenersRef = useRef<Map<string, () => void>>(new Map());
   // Output received but not yet parsed by xterm, per session (flow control units: bytes for SSH, chars otherwise).
   const unackedOutputRef = useRef<Map<string, number>>(new Map());
@@ -103,14 +112,14 @@ export function useTerminalInstances(options: TerminalInstancesOptions) {
   // Cleanup on component unmount
   useEffect(() => {
     return () => {
-      if (activeWebglRef.current) {
+      webglAddonsRef.current.forEach((addon) => {
         try {
-          activeWebglRef.current.addon.dispose();
+          addon.dispose();
         } catch {
           // Ignore
         }
-        activeWebglRef.current = null;
-      }
+      });
+      webglAddonsRef.current.clear();
 
       dataListenersRef.current.forEach((unsubscribe) => {
         try {
@@ -173,9 +182,7 @@ export function useTerminalInstances(options: TerminalInstancesOptions) {
         smoothScrollDuration: 0,
         fastScrollModifier: 'alt',
         allowProposedApi: true,
-        theme: vividColorsEnabledRef.current
-          ? { ...VIVID_TERMINAL_THEME }
-          : { ...DEFAULT_TERMINAL_THEME },
+        theme: { ...terminalThemeRef.current },
       });
 
       const fitAddon = new FitAddon();
@@ -303,7 +310,7 @@ export function useTerminalInstances(options: TerminalInstancesOptions) {
             else unacked.delete(session.id);
             window.electronAPI?.ackTerminalData(session.id, size);
           };
-          const formatted = highlighter.process(chunk, vividColorsEnabledRef.current);
+          const formatted = highlighter.process(chunk, syntaxHighlightingRef.current);
           if (!formatted) {
             acknowledge();
             return;
@@ -345,13 +352,14 @@ export function useTerminalInstances(options: TerminalInstancesOptions) {
     const activeIds = new Set(sessions.map((s) => s.id));
     terminalInstances.current.forEach((instance, id) => {
       if (!activeIds.has(id)) {
-        if (activeWebglRef.current?.sessionId === id) {
+        const webglAddon = webglAddonsRef.current.get(id);
+        if (webglAddon) {
           try {
-            activeWebglRef.current.addon.dispose();
+            webglAddon.dispose();
           } catch {
             // Ignore
           }
-          activeWebglRef.current = null;
+          webglAddonsRef.current.delete(id);
         }
         const searchAddon = searchAddonsRef.current.get(id);
         if (searchAddon) {
@@ -403,70 +411,78 @@ export function useTerminalInstances(options: TerminalInstancesOptions) {
     });
   }, [sessions]);
 
-  // Manage single active WebglAddon & re-fit on session switch or tab visibility change
+  // One WebglAddon per visible pane: switching focus between split panes neither disposes nor recreates a renderer.
   useEffect(() => {
-    if (
-      activeWebglRef.current &&
-      (activeWebglRef.current.sessionId !== activeSessionId ||
-        !isVisible ||
-        !terminalInstances.current.has(activeWebglRef.current.sessionId))
-    ) {
-      const prevSessionId = activeWebglRef.current.sessionId;
+    const addons = webglAddonsRef.current;
+    const visible = new Set(isVisible ? visibleIds : []);
+
+    addons.forEach((addon, id) => {
+      const instance = terminalInstances.current.get(id);
+      if (instance && visible.has(id)) return;
       try {
-        activeWebglRef.current.addon.dispose();
+        addon.dispose();
       } catch {
         // Ignore
       }
-      activeWebglRef.current = null;
-      const prevInstance = terminalInstances.current.get(prevSessionId);
-      if (prevInstance) {
+      addons.delete(id);
+      if (instance) {
         try {
-          prevInstance.term.refresh(0, prevInstance.term.rows - 1);
+          instance.term.refresh(0, instance.term.rows - 1);
         } catch {
           // Ignore
         }
       }
-    }
+    });
 
+    if (!isVisible) return;
+
+    visible.forEach((id) => {
+      if (addons.has(id)) return;
+      const instance = terminalInstances.current.get(id);
+      if (!instance) return;
+      try {
+        const webgl = new WebglAddon();
+        webgl.onContextLoss(() => {
+          try {
+            webgl.dispose();
+          } catch {
+            // Ignore
+          }
+          if (addons.get(id) === webgl) {
+            addons.delete(id);
+          }
+          try {
+            instance.term.refresh(0, instance.term.rows - 1);
+          } catch {
+            // Ignore
+          }
+        });
+        instance.term.loadAddon(webgl);
+        addons.set(id, webgl);
+      } catch {
+        // Fallback to standard renderer
+      }
+    });
+
+    scheduleFit();
+  }, [visibleIds, isVisible, sessions.length]);
+
+  // Re-fit, repaint and refocus the active terminal on session switch or tab visibility change
+  useEffect(() => {
     if (!isVisible || !activeSessionId) return;
 
     const instance = terminalInstances.current.get(activeSessionId);
-    if (instance) {
-      if (activeWebglRef.current?.sessionId !== activeSessionId) {
-        try {
-          const webgl = new WebglAddon();
-          webgl.onContextLoss(() => {
-            try {
-              webgl.dispose();
-            } catch {
-              // Ignore
-            }
-            if (activeWebglRef.current?.addon === webgl) {
-              activeWebglRef.current = null;
-            }
-            try {
-              instance.term.refresh(0, instance.term.rows - 1);
-            } catch {
-              // Ignore
-            }
-          });
-          instance.term.loadAddon(webgl);
-          activeWebglRef.current = { sessionId: activeSessionId, addon: webgl };
-        } catch {
-          // Fallback to standard renderer
-        }
-      }
+    if (!instance) return;
 
-      scheduleFit();
-      try {
-        instance.term.refresh(0, instance.term.rows - 1);
-        const focused = document.activeElement;
-        if (!renamingId && !menuAnchor && (!focused || focused === document.body || focused.closest('.xterm'))) {
-          instance.term.focus();
-        }
-      } catch {
-        // Ignore
+    scheduleFit();
+    try {
+      instance.term.refresh(0, instance.term.rows - 1);
+      const focused = document.activeElement;
+      if (!renamingId && !menuAnchor && (!focused || focused === document.body || focused.closest('.xterm'))) {
+        instance.term.focus();
       }
+    } catch {
+      // Ignore
     }
   }, [activeSessionId, isVisible, sessions.length]);
 
@@ -484,37 +500,33 @@ export function useTerminalInstances(options: TerminalInstancesOptions) {
         // Ignore
       }
     });
-    if (activeWebglRef.current) {
+    webglAddonsRef.current.forEach((addon) => {
       try {
-        activeWebglRef.current.addon.clearTextureAtlas();
+        addon.clearTextureAtlas();
       } catch {
         // Ignore
       }
-    }
+    });
     scheduleFit();
   }, [settings]);
 
-  // Live colour theme & syntax highlighting toggle
+  // Apply the colour theme live to all terminal instances
   useEffect(() => {
-    const nextTheme = vividColorsEnabled
-      ? { ...VIVID_TERMINAL_THEME }
-      : { ...DEFAULT_TERMINAL_THEME };
-
     terminalInstances.current.forEach(({ term }) => {
       try {
-        term.options.theme = nextTheme;
+        term.options.theme = { ...terminalTheme };
       } catch {
         // Ignore
       }
     });
 
-    if (activeWebglRef.current) {
+    webglAddonsRef.current.forEach((addon) => {
       try {
-        activeWebglRef.current.addon.clearTextureAtlas();
+        addon.clearTextureAtlas();
       } catch {
         // Ignore
       }
-    }
+    });
 
     terminalInstances.current.forEach(({ term }) => {
       try {
@@ -525,5 +537,5 @@ export function useTerminalInstances(options: TerminalInstancesOptions) {
         // Ignore
       }
     });
-  }, [vividColorsEnabled, terminalInstances]);
+  }, [terminalTheme]);
 }

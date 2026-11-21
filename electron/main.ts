@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, shell, Menu, screen, clipboard } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell, Menu, screen, clipboard, nativeTheme } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import { SSHService } from './services/SSHService';
@@ -427,6 +427,14 @@ function registerIpcHandlers() {
     platform: process.platform,
     arch: process.arch,
   }));
+  // Native window chrome follows the renderer's app theme (traffic lights, resize background).
+  ipcMain.on('window:setAppearance', (event, appearance: { mode?: unknown; backgroundColor?: unknown }) => {
+    const { mode, backgroundColor } = appearance ?? {};
+    if (mode !== 'dark' && mode !== 'light') return;
+    if (typeof backgroundColor !== 'string' || !/^#[0-9a-f]{6}$/i.test(backgroundColor)) return;
+    nativeTheme.themeSource = mode;
+    BrowserWindow.fromWebContents(event.sender)?.setBackgroundColor(backgroundColor);
+  });
   // File Picker Dialogs. Since Electron 43 macOS no longer remembers the last folder and
   // dialogs without defaultPath open in Downloads, so the last used folder is tracked here.
   let lastDialogDirectory = app.getPath('home');
